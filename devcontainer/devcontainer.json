@@ -1,0 +1,20 @@
+image: gitpod/workspace-node:22
+tasks:
+  - name: bootstrap
+    init: |
+      corepack enable || true
+      pnpm -v || npm i -g pnpm@9
+      pnpm install
+    command: |
+      bash ./run_all.sh
+ports:
+  - port: 3000
+    onOpen: open-browser
+  - port: 4000
+    onOpen: open-browser
+  - port: 5055
+    onOpen: open-browser
+vscode:
+  extensions:
+    - dbaeumer.vscode-eslint
+    - esbenp.prettier-vscode
