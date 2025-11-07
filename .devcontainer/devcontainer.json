@@ -1,0 +1,12 @@
+{
+  "name": "AutoEnroll Dev (One-Tap)",
+  "image": "mcr.microsoft.com/devcontainers/typescript-node:22",
+  "updateContentCommand": "bash -lc 'corepack enable || true; pnpm -v || npm i -g pnpm@9'",
+  "postStartCommand": "bash -lc 'chmod +x ./run_all.sh || true; ./run_all.sh'",
+  "forwardPorts": [3000, 4000, 5055],
+  "portsAttributes": {
+    "3000": { "label": "Portal", "onAutoForward": "openBrowser" },
+    "4000": { "label": "API", "onAutoForward": "openBrowser" },
+    "5055": { "label": "NAERSA", "onAutoForward": "openBrowser" }
+  }
+}
