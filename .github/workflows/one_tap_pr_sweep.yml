@@ -1,0 +1,36 @@
+name: One-Tap PR Sweep
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sweep:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+
+      - name: Prepare monorepo folders
+        run: |
+          mkdir -p apps/orchestrator/_imported docs
+
+      - name: Move known root items (keep .github)
+        run: |
+          set -e
+          for f in server.js run_all.sh README.md devcontainer .devcontainer; do
+            [ -e "$f" ] && git mv "$f" apps/orchestrator/_imported/ || true
+          done
+          [ -f docs/production-readiness.md ] || echo "# Production Readiness Pack\n(placeholder)" > docs/production-readiness.md
+
+      - name: Create PR
+        uses: peter-evans/create-pull-request@v6
+        with:
+          branch: auto/sweep
+          commit-message: "chore: monorepo sweep — move root files & add docs"
+          title: "One-Tap: move root files into apps/orchestrator/_imported + add docs"
+          body: |
+            This PR moves legacy root files into `apps/orchestrator/_imported/` and creates `docs/production-readiness.md`.
+            Safe to merge.
+          labels: automation
