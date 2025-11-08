@@ -16,10 +16,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with: { fetch-depth: 0 }
-      - run: mkdir -p "${{ github.event.inputs.dst_dir }}"
-      - name: Move directory
+      - name: Validate and move
         run: |
-          set -e
-          git mv "${{ github.event.inputs.src_dir }}" "${{ github.event.inputs.dst_dir }}/"
-          git commit -m "chore: move dir ${{ github.event.inputs.src_dir }} -> ${{ github.event.inputs.dst_dir }}/" || echo "no changes"
+          set -euo pipefail
+          SRC="${{ github.event.inputs.src_dir }}"
+          DST="${{ github.event.inputs.dst_dir }}"
+          echo "SRC=$SRC  DST=$DST"
+          if [ ! -d "$SRC" ]; then
+            echo "ERROR: source dir '$SRC' not found at repo root"; exit 1;
+          fi
+          mkdir -p "$DST"
+          git mv "$SRC" "$DST/"   # becomes $DST/<src_basename>
+          git commit -m "chore: move dir $SRC -> $DST/" || { echo "No dir changes"; exit 0; }
           git push origin HEAD:${GITHUB_REF_NAME}
