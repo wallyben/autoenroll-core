@@ -1,0 +1,25 @@
+name: Move One File
+on:
+  workflow_dispatch:
+    inputs:
+      src:
+        description: "Source path (e.g., server.js)"
+        required: true
+      dst:
+        description: "Destination path (e.g., apps/orchestrator/_imported/server.js)"
+        required: true
+permissions:
+  contents: write
+jobs:
+  mv:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - name: Make destination folder
+        run: mkdir -p "$(dirname '${{ github.event.inputs.dst }}')"
+      - name: Move
+        run: |
+          git mv "${{ github.event.inputs.src }}" "${{ github.event.inputs.dst }}"
+          git commit -m "chore: move ${{ github.event.inputs.src }} -> ${{ github.event.inputs.dst }}" || echo "no changes"
+          git push origin HEAD:${GITHUB_REF_NAME}
