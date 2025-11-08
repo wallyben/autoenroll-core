@@ -1,0 +1,37 @@
+name: One-Tap Finish
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+
+jobs:
+  finish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+
+      - name: Create folders
+        run: |
+          mkdir -p apps/orchestrator/_imported docs
+
+      - name: Move common root files (keep .github)
+        run: |
+          set -e
+          [ -f server.js ] && git mv server.js apps/orchestrator/_imported/ || true
+          [ -f run_all.sh ] && git mv run_all.sh apps/orchestrator/_imported/ || true
+          [ -d devcontainer ] && git mv devcontainer apps/orchestrator/_imported/ || true
+          [ -d .devcontainer ] && git mv .devcontainer apps/orchestrator/_imported/ || true
+          [ -f README.md ] && git mv README.md apps/orchestrator/_imported/ || true
+
+      - name: Add Production Readiness doc if missing
+        run: |
+          if [ ! -f docs/production-readiness.md ]; then
+            printf "# Production Readiness Pack\n(placeholder)\n" > docs/production-readiness.md
+          fi
+
+      - name: Commit & push
+        run: |
+          git add -A
+          git commit -m "chore: one-tap finish — scaffold & move root files" || echo "no changes"
+          git push origin HEAD:${GITHUB_REF_NAME}
