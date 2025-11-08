@@ -1,16 +1,6 @@
 name: One-Tap Finish
 on:
   workflow_dispatch:
-    inputs:
-      doc_path:
-        description: "Where to write the big doc"
-        required: true
-        default: "docs/production-readiness.md"
-      import_subdir:
-        description: "Imported code location (from One-Tap Merge)"
-        required: true
-        default: "_merge_tmp"
-
 permissions:
   contents: write
 
@@ -19,89 +9,29 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with: { fetch-depth: 0 }
+        with:
+          fetch-depth: 0
 
-      - name: Configure Git
+      - name: Create folders
         run: |
-          git config user.name "autoenroll-bot"
-          git config user.email "actions@users.noreply.github.com"
+          mkdir -p apps/orchestrator/_imported docs
 
-      - name: Ensure monorepo folders exist
+      - name: Move common root files (keep .github)
         run: |
-          mkdir -p apps/orchestrator apps/admin \
-                   services/eligibility services/aepn services/contributions services/reconciliation services/evidence services/observability \
-                   packages/rules packages/adapters packages/ui packages/shared \
-                   infra/iac infra/ci infra/k8s \
-                   docs/adr
+          set -e
+          [ -f server.js ] && git mv server.js apps/orchestrator/_imported/ || true
+          [ -f run_all.sh ] && git mv run_all.sh apps/orchestrator/_imported/ || true
+          [ -d devcontainer ] && git mv devcontainer apps/orchestrator/_imported/ || true
+          [ -d .devcontainer ] && git mv .devcontainer apps/orchestrator/_imported/ || true
 
-      - name: Move imported code (if present)
+      - name: Add Production Readiness doc if missing
         run: |
-          if [ -d "${{ github.event.inputs.import_subdir }}" ] && [ "$(ls -A '${{ github.event.inputs.import_subdir }}' 2>/dev/null)" ]; then
-            mkdir -p apps/orchestrator/_imported
-            git mv "${{ github.event.inputs.import_subdir }}"/* apps/orchestrator/_imported/ 2>/dev/null || true
-            git rm -r "${{ github.event.inputs.import_subdir }}" 2>/dev/null || true
+          if [ ! -f docs/production-readiness.md ]; then
+            printf "# Production Readiness Pack\n(placeholder)\n" > docs/production-readiness.md
           fi
-
-      - name: Write Production Readiness Pack
-        shell: bash
-        run: |
-          mkdir -p "$(dirname '${{ github.event.inputs.doc_path }}')"
-          cat > "${{ github.event.inputs.doc_path }}" <<'MD'
-# AutoEnroll.ie — Production Readiness Pack (v1)
-**Date:** 2025-11-07 (Europe/Dublin)
-
-**Goal:** Engine-agnostic AE/NAERSA orchestration with ≥99.9% app availability, 95% jobs <5m, RPO ≤5m/RTO ≤30m.
-
-## 1) Product One-Pager
-Orchestrator above any payroll (BrightPay, Sage, Xero UK, Zellis, ADP). Ingest payroll, parse AEPNs, run eligibility, enrol/opt-out, calculate contributions, reconcile, emit audit evidence.
-
-## 2) SLOs & SLIs
-- Availability 99.9% (p95 <1s)
-- Job timeliness: 95% <5m; 99% <15m
-- Durability: RPO ≤5m; RTO ≤30m; error budget policy (freeze if >25% burn)
-
-## 3) Architecture
-Multi-AZ app + Postgres, queue workers (bulkheads), AEPN inbox/outbox (idempotent), contributions calc, reconciliation + WORM evidence, observability & synthetic probes, blue/green + canary, autoscale.
-
-## 4) Data Model
-Employer, PayPeriod, Employee, EligibilitySnapshot, AEPayload(in/out), EnrolmentAction, ContributionLine, ReconciliationMatch, Exception, EvidencePack, Provider, AdapterVersion, Release.
-
-## 5) Security & GDPR
-Processor DPA; TLS, AES-256, KMS; PII vault; RBAC/MFA; immutable audit; EU residency.
-
-## 6) Onboarding Playbooks
-Employer & Bureau flows; 13-week dry run; acceptance checks.
-
-## 7) Exceptions & QA Gates
-Auto-resolve (dup AEPN, rounding); manual (boundary eligibility, retro, >1% deltas); escalate (provider outage). QA blocks with one-click fixes + approvals.
-
-## 8) Provider Adapters
-Versioned contracts, retries/backoff, circuit breakers, redaction; contract tests + nightly canaries.
-
-## 9) Evidence Pack
-Eligibility reasons, AEPNs, actions, contributions, reconciliation, sign-offs, content hash; retain 6y (WORM).
-
-## 10) Change Mgmt
-Trunk + flags; expand→code→contract; blue/green (10%/15m) + 1-click rollback; release notes.
-
-## 11) Observability & Alerts
-Dashboards (availability, latency, queue depth/age, job success, adapter health, DB lag); probes every 30s; P1/P2/P3 playbooks; 09:00 digest.
-
-## 12) Backup & DR
-PITR ≤5m; hourly snaps; daily cross-region; weekly restore; warm standby region; quarterly failover drill.
-
-## 13) Sales Collateral
-Why AutoEnroll.ie vs free AE, Security/Compliance, Implementation Checklist.
-
-## 14) Status & DoD (V1)
-DoD: imports+mapping, eligibility+tests, AEPN inbox/outbox, contributions, ≥2 adapters, reconciliation ≥95% auto-match, evidence packs, QA gates, SLO dashboards, blue/green+canary, RBAC/MFA+audit+DPA/ToS/SLA, 2 pilots ×2 cycles (p95 proof-pack <5m).
-
-## 15) 8-Week Critical Path
-W1 repo/CI + mapping + rules tests → W2 AEPN → W3 contribs + Adapter#1 → W4 reco+evidence+QA → W5 Adapter#2 + bureau tools → W6 blue/green+DR + pilot#1 → W7 pilot#2 + status page → W8 freeze & go-live.
-MD
 
       - name: Commit & push
         run: |
           git add -A
-          git commit -m "chore: tidy merge, write Production Readiness Pack" || echo "no changes"
+          git commit -m "chore: one-tap finish — scaffold & move root files" || echo "no changes"
           git push origin HEAD:${GITHUB_REF_NAME}
