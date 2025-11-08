@@ -1,0 +1,105 @@
+name: One-Tap Docs
+on:
+  workflow_dispatch:
+    inputs:
+      path:
+        description: "Doc path"
+        required: true
+        default: "docs/production-readiness.md"
+
+permissions:
+  contents: write
+
+jobs:
+  write:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+
+      - name: Write Production Readiness Pack
+        run: |
+          mkdir -p "$(dirname '${{ github.event.inputs.path }}')"
+          cat > "${{ github.event.inputs.path }}" <<'MD'
+          # AutoEnroll.ie — Production Readiness Pack (v1)
+
+          **Date:** 2025-11-07 (Europe/Dublin)  
+          **Goal:** Engine-agnostic AE/NAERSA orchestration with ≥99.9% app availability, 95% jobs <5m, RPO ≤5m/RTO ≤30m.
+
+          ## 1) Product One-Pager
+          Orchestrator above any payroll (BrightPay, Sage, Xero UK, Zellis, ADP). Ingest payroll, parse AEPNs, run eligibility, enrol/opt-out, calculate contributions, reconcile, emit audit evidence.
+
+          ## 2) SLOs & SLIs
+          - **Availability (SLI-A):** 99.9% monthly; p95 <1s.
+          - **Job timeliness (SLI-B):** 95% <5m; 99% <15m.
+          - **Durability:** RPO ≤5m; RTO ≤30m.  
+          Error-budget >25% burn ⇒ feature freeze.
+
+          ## 3) Architecture
+          Multi-AZ app + Postgres, queue workers (bulkheads per provider), AEPN inbox/outbox with idempotency, contributions calc, reconciliation + evidence (WORM), observability (logs/metrics/traces + synthetic probes), blue/green + canary, autoscale.
+
+          ## 4) Data Model (essentials)
+          Employer, PayPeriod, Employee, EligibilitySnapshot, AEPayload(in/out), EnrolmentAction, ContributionLine, ReconciliationMatch, Exception, EvidencePack, Provider, AdapterVersion, Release.
+
+          ## 5) Security & GDPR
+          Processor DPA; TLS in transit, AES-256 at rest, KMS keys; PII vault; RBAC/MFA; immutable audit log; EU residency; subject-rights with lawful-basis exceptions.
+
+          ## 6) Onboarding Playbooks
+          - **Employer:** kickoff → field mapping (CSV/API) → 13-week dry run → go-live → post-run check.
+          - **Bureau:** bulk templates, staggered first runs, portfolio dashboard.
+
+          ## 7) Exceptions & QA Gates
+          Auto-resolve: dup AEPN, tiny rounding; Manual: boundary eligibility, retro, >1% contrib deltas; Escalate: provider outage, malformed response.  
+          QA blocks bad runs (data/policy/file integrity) with one-click fixes + approval notes.
+
+          ## 8) Provider Adapters
+          Contract: versioned schemas, retries/backoff, circuit breakers, redaction. Contract tests with recorded fixtures; nightly sandbox canaries.
+
+          ## 9) Evidence Pack (PDF+JSON)
+          Employer/period meta, eligibility (who/why), AEPNs processed, actions, contributions, reconciliation, sign-offs, content hash. Retain 6y (WORM).
+
+          ## 10) Change Management
+          Trunk + feature flags; expand→code→contract migrations; blue/green with 10%/15m canary; one-click rollback; release notes (rules/adapter deltas, tests, rollback steps).
+
+          ## 11) Observability & Alerts
+          Dashboards: availability, latency, queue depth/age, job success, adapter health, DB lag. Probes every 30s: login, AEPN ingest, contrib export, evidence download. P1/P2/P3 alerts + 09:00 digest.
+
+          ## 12) Incident Response
+          P1 app/API down → rollback, failover DB, 30-min updates.  
+          P2 timeliness breach → scale workers, throttle non-critical, check circuits.  
+          P3 adapter red → open circuit, queue, notify, canary fix. Postmortem 1-pager.
+
+          ## 13) Backup & DR
+          PITR ≤5m; hourly snaps; daily cross-region; weekly restores. Warm standby EU-region; quarterly failover drill.
+
+          ## 14) Sales Collateral
+          A) Why AutoEnroll.ie if BrightPay AE is free (engine-agnostic, AEPN control, reconciliation, SLOs, ROI).  
+          B) Security & Compliance one-pager.  
+          C) Implementation checklist (inputs, dry run, acceptance, success metrics).
+
+          ## 15) Project Status & DoD (V1)
+          - **Status:** specs/runbooks ready; code scaffold next.  
+          - **DoD:** imports+mapping cache, eligibility (13-week) + tests, AEPN inbox/outbox, contributions calc, ≥2 provider adapters, reconciliation ≥95% auto-match, evidence packs, QA gates, SLO dashboards, blue/green+canary, RBAC/MFA+audit+DPA/ToS/SLA, 2 pilots ×2 cycles with p95 proof-pack <5m.
+
+          ## 16) 8-Week Critical Path
+          W1 repo/CI + mapping + rules tests → W2 AEPN flows → W3 contribs + Adapter#1 → W4 reco + evidence + QA → W5 Adapter#2 + bureau tools → W6 blue/green+DR + pilot#1 → W7 pilot#2 + status page → W8 freeze & go-live.
+
+          ## 17) Merge Plan Summary
+          One-Tap Bootstrap+Merge ran; tidy `_merge_tmp/` into `apps/` and `services/`; protect `main`; rotate secrets; turn CI green.
+
+          ## 18) KPIs
+          Activation rate, exceptions/100 emp (p50/p95), auto-match %, time-to-proof-pack (p95), job timeliness (p95), error-budget burn, tickets/100 emp.
+
+          ## 19) Roles (Lean)
+          Solo until ≥50 employers or >150 exceptions/week; then fractional onboarding helper. SME fractional for rules sign-off.
+
+          ## 20) Status Page Copy (public)
+          Components: App/API, AEPN, Provider—NAERSA, Provider—PensionA/B, Evidence Store. Template: “Submissions queued; auto-send on recovery; no data loss; next update 30m.”
+
+          MD
+
+      - name: Commit & push
+        run: |
+          git add "${{ github.event.inputs.path }}"
+          git commit -m "docs: add Production Readiness Pack"
+          git push origin HEAD:${GITHUB_REF_NAME}
