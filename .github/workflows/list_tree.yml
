@@ -1,0 +1,22 @@
+name: List Repo Tree
+on: { workflow_dispatch: {} }
+permissions: { contents: write }
+jobs:
+  tree:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - name: Show tree in logs
+        run: |
+          echo "== root ==" && ls -la
+          echo "== apps ==" && [ -d apps ] && find apps -maxdepth 5 -print || true
+      - name: Save tree to file
+        run: |
+          {
+            echo "== root =="; ls -la;
+            echo; echo "== apps =="; [ -d apps ] && find apps -maxdepth 5 -print || true;
+          } > repo_tree.txt
+          git add repo_tree.txt
+          git commit -m "chore: snapshot repo tree" || true
+          git push origin HEAD:${GITHUB_REF_NAME}
