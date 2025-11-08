@@ -1,0 +1,56 @@
+name: One-Tap Sweep & Finish
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  sweep:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+
+      - name: Configure git
+        run: |
+          git config user.name "autoenroll-bot"
+          git config user.email "actions@users.noreply.github.com"
+
+      - name: Ensure monorepo folders
+        run: |
+          mkdir -p apps/orchestrator/_imported apps/admin \
+                   services/eligibility services/aepn services/contributions services/reconciliation services/evidence services/observability \
+                   packages/rules packages/adapters packages/ui packages/shared \
+                   infra/iac infra/ci infra/k8s \
+                   docs/adr
+
+      - name: Move root files into apps/orchestrator/_imported (keep .github)
+        shell: bash
+        run: |
+          shopt -s dotglob
+          for f in *; do
+            [ "$f" = ".github" ] && continue
+            [ "$f" = "apps" ] && continue
+            [ "$f" = "services" ] && continue
+            [ "$f" = "packages" ] && continue
+            [ "$f" = "infra" ] && continue
+            [ "$f" = "docs" ] && continue
+            git mv "$f" apps/orchestrator/_imported/ 2>/dev/null || true
+          done
+
+      - name: Write Production Readiness Pack (if missing)
+        run: |
+          if [ ! -f docs/production-readiness.md ]; then
+            cat > docs/production-readiness.md <<'MD'
+# AutoEnroll.ie — Production Readiness Pack (v1)
+(Concise version) SLOs 99.9% app, 95% jobs <5m, RPO ≤5m/RTO ≤30m; multi-AZ, queues, outbox/idempotency, blue/green+canary, QA gates, reconciliation, evidence, GDPR, DR. 
+See chat/canvas for full text to expand later.
+MD
+          fi
+
+      - name: Commit & push
+        run: |
+          git add -A
+          git commit -m "chore: monorepo sweep, import root into apps/orchestrator/_imported, add docs" || echo "no changes"
+          git push origin HEAD:${GITHUB_REF_NAME}
