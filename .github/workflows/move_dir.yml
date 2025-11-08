@@ -1,0 +1,25 @@
+name: Move Directory
+on:
+  workflow_dispatch:
+    inputs:
+      src_dir:
+        description: "Source directory (e.g., devcontainer or .devcontainer)"
+        required: true
+      dst_dir:
+        description: "Destination directory (e.g., apps/orchestrator/_imported)"
+        required: true
+permissions:
+  contents: write
+jobs:
+  mvdir:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - run: mkdir -p "${{ github.event.inputs.dst_dir }}"
+      - name: Move directory
+        run: |
+          set -e
+          git mv "${{ github.event.inputs.src_dir }}" "${{ github.event.inputs.dst_dir }}/"
+          git commit -m "chore: move dir ${{ github.event.inputs.src_dir }} -> ${{ github.event.inputs.dst_dir }}/" || echo "no changes"
+          git push origin HEAD:${GITHUB_REF_NAME}
