@@ -1,0 +1,108 @@
+name: One-Tap Bootstrap + Merge
+on:
+  workflow_dispatch:
+    inputs:
+      source_repo:
+        description: "HTTPS URL of the repo to merge (e.g. https://github.com/you/scaffold.git)"
+        required: true
+      source_ref:
+        description: "Branch or tag to merge"
+        required: true
+        default: "main"
+      dest_subdir:
+        description: "Subdirectory to place imported repo (leave _merge_tmp)"
+        required: true
+        default: "_merge_tmp"
+
+permissions:
+  contents: write
+
+jobs:
+  merge:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout destination repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure Git
+        run: |
+          git config user.name "autoenroll-bot"
+          git config user.email "actions@users.noreply.github.com"
+
+      - name: Import source repo into subdir (preserve history)
+        run: |
+          set -e
+          git remote add source "${{ github.event.inputs.source_repo }}"
+          git fetch source "${{ github.event.inputs.source_ref }}"
+          mkdir -p "${{ github.event.inputs.dest_subdir }}"
+          git read-tree --prefix="${{ github.event.inputs.dest_subdir }}/" -u "source/${{ github.event.inputs.source_ref }}"
+          git commit -m "chore(merge): import ${{ github.event.inputs.source_repo }}@${{ github.event.inputs.source_ref }} into ${{ github.event.inputs.dest_subdir }}/"
+
+      - name: Create monorepo structure
+        run: |
+          mkdir -p apps/orchestrator apps/admin \
+                   services/eligibility services/aepn services/contributions services/reconciliation services/evidence services/observability \
+                   packages/rules packages/adapters packages/ui packages/shared \
+                   infra/iac infra/ci infra/k8s \
+                   docs/adr .github/workflows
+          # only create placeholder if missing:
+          [ -f README.md ] || cat > README.md <<'MD'
+          # AutoEnroll.ie
+          Engine-agnostic orchestration for Ireland Auto-Enrolment (NAERSA).
+          See `docs/production-readiness.md` for SLOs, architecture, runbooks.
+          MD
+          echo "run: make dev" > Makefile
+
+      - name: Drop starter CI (build + lint only; safe default)
+        run: |
+          cat > .github/workflows/ci.yml <<'YML'
+          name: CI
+          on: [push, pull_request]
+          jobs:
+            build:
+              runs-on: ubuntu-latest
+              steps:
+                - uses: actions/checkout@v4
+                - name: Set up Node
+                  uses: actions/setup-node@v4
+                  with: { node-version: '20' }
+                - run: echo "✅ CI placeholder — wire real build/test when code lands"
+          YML
+
+      - name: Seed docs placeholders
+        run: |
+          [ -f docs/production-readiness.md ] || cat > docs/production-readiness.md <<'MD'
+          # Production Readiness Pack
+          This is a placeholder. Open the ChatGPT canvas “AutoEnroll.ie — Production Readiness Pack (v0.1)”
+          and paste its contents here. Sections already defined there: SLOs, architecture, security/GDPR,
+          onboarding, runbooks, incident response, DR, KPIs, sales one-pagers, merge plan, critical path.
+          MD
+          [ -f docs/onboarding-playbooks.md ] || echo "# Onboarding Playbooks\n(placeholder)" > docs/onboarding-playbooks.md
+          [ -f docs/adr/ADR-0001-monorepo.md ] || cat > docs/adr/ADR-0001-monorepo.md <<'MD'
+          # ADR-0001: Adopt monorepo structure
+          Decision: apps/, services/, packages/, infra/, docs/ as project layout. Rationale: shared libs, consistent CI/CD, single status page.
+          MD
+
+      - name: Move imported code into monorepo (best-effort tidy)
+        run: |
+          # If apps/orchestrator is empty, promote imported code there; else leave in _merge_tmp for manual tidy.
+          if [ -z "$(ls -A apps/orchestrator 2>/dev/null)" ]; then
+            # Move only if _merge_tmp exists and not empty
+            if [ -d "${{ github.event.inputs.dest_subdir }}" ] && [ "$(ls -A ${{ github.event.inputs.dest_subdir }} | wc -l)" -gt 0 ]; then
+              git mv "${{ github.event.inputs.dest_subdir }}" apps/orchestrator/_imported || true
+            fi
+          fi
+          git add -A
+          git commit -m "chore(structure): scaffold monorepo, docs, CI" || echo "no changes"
+
+      - name: Push changes
+        run: git push origin HEAD:${GITHUB_REF_NAME}
+
+      - name: Success note
+        run: |
+          echo "🎉 Done. Next from your phone:"
+          echo "1) Actions → CI should be green."
+          echo "2) Move files from apps/orchestrator/_imported to the right folders when ready."
+          echo "3) Paste the Production Readiness Pack from ChatGPT canvas into docs/production-readiness.md."
