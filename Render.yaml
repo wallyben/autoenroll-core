@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: autoenroll-core
+    env: node
+    plan: free
+    region: frankfurt
+    buildCommand: |
+      npm ci || npm install
+      npm --prefix apps/portal ci || npm --prefix apps/portal install
+      npm run build:portal
+      npx prisma generate
+    startCommand: node server.js
+    autoDeploy: true
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: API_KEY
+        sync: false
+    postDeployCommand: npx prisma migrate deploy
