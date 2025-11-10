@@ -1,0 +1,96 @@
+{
+  "employerId": "comp-123",
+  "periodStart": "2024-01-01",
+  "periodEnd": "2024-01-31",
+  "employees": [
+    {
+      "id": "emp-001",
+      "employerId": "comp-123",
+      "firstName": "John",
+      "lastName": "Doe",
+      "ppsNumber": "1234567T",
+      "dateOfBirth": "1990-01-15",
+      "email": "john.doe@example.com",
+      "phone": "+353871234567",
+      "address": {
+        "line1": "123 Main Street",
+        "city": "Dublin",
+        "county": "Dublin",
+        "postalCode": "D01 A1B2",
+        "country": "Ireland"
+      },
+      "employmentStartDate": "2020-03-01",
+      "salary": 50000
+    },
+    {
+      "id": "emp-002",
+      "employerId": "comp-123",
+      "firstName": "Jane",
+      "lastName": "Smith",
+      "ppsNumber": "7654321T",
+      "dateOfBirth": "1985-07-22",
+      "email": "jane.smith@example.com",
+      "phone": "+353879876543",
+      "address": {
+        "line1": "456 High Street",
+        "city": "Cork",
+        "county": "Cork",
+        "postalCode": "T12 AB34",
+        "country": "Ireland"
+      },
+      "employmentStartDate": "2019-06-15",
+      "salary": 62000
+    },
+    {
+      "id": "emp-003",
+      "employerId": "comp-123",
+      "firstName": "Michael",
+      "lastName": "Johnson",
+      "ppsNumber": "9876543T",
+      "dateOfBirth": "1992-11-30",
+      "email": "michael.j@example.com",
+      "phone": "+353865554321",
+      "address": {
+        "line1": "789 Park Road",
+        "city": "Galway",
+        "county": "Galway",
+        "postalCode": "H91 X123",
+        "country": "Ireland"
+      },
+      "employmentStartDate": "2021-01-10",
+      "salary": 45000
+    }
+  ],
+  "contributions": [
+    {
+      "id": "cont-001",
+      "employeeId": "emp-001",
+      "employerId": "comp-123",
+      "periodStart": "2024-01-01",
+      "periodEnd": "2024-01-31",
+      "employeeAmount": 150.0,
+      "employerAmount": 150.0,
+      "totalAmount": 300.0
+    },
+    {
+      "id": "cont-002",
+      "employeeId": "emp-002",
+      "employerId": "comp-123",
+      "periodStart": "2024-01-01",
+      "periodEnd": "2024-01-31",
+      "employeeAmount": 186.0,
+      "employerAmount": 186.0,
+      "totalAmount": 372.0
+    },
+    {
+      "id": "cont-003",
+      "employeeId": "emp-003",
+      "employerId": "comp-123",
+      "periodStart": "2024-01-01",
+      "periodEnd": "2024-01-31",
+      "employeeAmount": 135.0,
+      "employerAmount": 135.0,
+      "totalAmount": 270.0
+    }
+  ]
+}

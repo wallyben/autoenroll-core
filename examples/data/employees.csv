@@ -1,0 +1,4 @@
+id,employer_id,first_name,last_name,pps_number,date_of_birth,email,phone,address_line1,address_line2,city,county,postal_code,country,employment_start_date,salary
+emp-001,comp-123,John,Doe,1234567T,1990-01-15,john.doe@example.com,+353871234567,123 Main Street,,Dublin,Dublin,D01 A1B2,Ireland,2020-03-01,50000
+emp-002,comp-123,Jane,Smith,7654321T,1985-07-22,jane.smith@example.com,+353879876543,456 High Street,,Cork,Cork,T12 AB34,Ireland,2019-06-15,62000
+emp-003,comp-123,Michael,Johnson,9876543T,1992-11-30,michael.j@example.com,+353865554321,789 Park Road,,Galway,Galway,H91 X123,Ireland,2021-01-10,45000

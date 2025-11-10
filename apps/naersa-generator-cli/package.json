@@ -1,0 +1,29 @@
+{
+  "name": "@autoenroll/naersa-generator-cli",
+  "version": "0.1.0",
+  "description": "CLI for generating NAERSA submission ZIP files",
+  "type": "module",
+  "bin": {
+    "naersa-generate": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --format esm --dts --clean",
+    "dev": "tsup src/index.ts --format esm --dts --watch",
+    "clean": "rm -rf dist",
+    "start": "node dist/index.js",
+    "test": "echo 'No tests for CLI app'",
+    "test:watch": "echo 'No tests for CLI app'",
+    "lint": "eslint src --ext .ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@autoenroll/types": "workspace:*",
+    "@autoenroll/naersa-adapter": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.6",
+    "tsup": "^8.0.1",
+    "typescript": "^5.3.3",
+    "vitest": "^1.1.0"
+  }
+}
