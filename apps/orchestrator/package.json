@@ -1,0 +1,18 @@
+{
+  "name": "@autoenroll/orchestrator",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Orchestrator service for AutoEnroll platform",
+  "main": "_imported/server.js",
+  "scripts": {
+    "dev": "node _imported/server.js",
+    "start": "node _imported/server.js",
+    "build": "echo 'No build step required for simple Node.js server'",
+    "test": "echo 'No tests yet'",
+    "lint": "echo 'No linting configured yet'",
+    "typecheck": "echo 'No TypeScript in this package yet'"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
