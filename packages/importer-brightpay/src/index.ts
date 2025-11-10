@@ -1,0 +1,1 @@
+export { mapBrightPay } from './mapBrightPay';
