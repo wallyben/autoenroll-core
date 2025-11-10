@@ -38,6 +38,14 @@ export function controlCsv(employees: EmployeeRecord[]): string {
 }
 
 /**
+ * Sanitizes a string to make it safe for use in file names
+ */
+function sanitizeFileName(input: string): string {
+  // Remove or replace characters that could be used for path traversal
+  return input.replace(/[^a-zA-Z0-9_-]/g, '_');
+}
+
+/**
  * Builds a ZIP file containing the control CSV and returns the file path
  */
 export async function buildZip(
@@ -46,7 +54,8 @@ export async function buildZip(
 ): Promise<string> {
   const csvContent = controlCsv(employees);
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-').split('T')[0];
-  const zipFileName = `NAERSA_${runId}_${timestamp}.zip`;
+  const sanitizedRunId = sanitizeFileName(runId);
+  const zipFileName = `NAERSA_${sanitizedRunId}_${timestamp}.zip`;
   
   // Create .worm/submissions directory if it doesn't exist
   const submissionsDir = path.join(process.cwd(), '.worm', 'submissions');
@@ -55,6 +64,13 @@ export async function buildZip(
   }
 
   const zipPath = path.join(submissionsDir, zipFileName);
+  
+  // Ensure the resolved path is within the submissions directory (prevent path traversal)
+  const normalizedZipPath = path.normalize(zipPath);
+  const normalizedSubmissionsDir = path.normalize(submissionsDir);
+  if (!normalizedZipPath.startsWith(normalizedSubmissionsDir)) {
+    throw new Error('Invalid file path: path traversal detected');
+  }
 
   return new Promise((resolve, reject) => {
     const output = fs.createWriteStream(zipPath);
@@ -73,7 +89,7 @@ export async function buildZip(
     archive.pipe(output);
 
     // Add the control CSV to the ZIP
-    archive.append(csvContent, { name: `control_${runId}.csv` });
+    archive.append(csvContent, { name: `control_${sanitizedRunId}.csv` });
 
     // Finalize the archive
     archive.finalize();
