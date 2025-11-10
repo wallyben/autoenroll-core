@@ -1,0 +1,51 @@
+name: Diagnose (build, typecheck, test, next-build)
+on: { workflow_dispatch: {} }
+
+permissions:
+  contents: read
+
+jobs:
+  diag:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - name: Enable corepack & pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@9.0.0 --activate
+          pnpm -v && node -v
+      - name: Install (pnpm)
+        run: pnpm install --frozen-lockfile=false
+      - name: List workspaces
+        run: pnpm -w ls --depth -1
+      - name: Lint & Typecheck
+        run: |
+          pnpm -w run lint || true
+          pnpm -w run typecheck || true
+      - name: Unit tests
+        run: pnpm -w run test || true
+      - name: Build all packages
+        run: pnpm -w run build || true
+      - name: Build Next app(s) (if present)
+        run: |
+          if [ -d apps/bureau-console ]; then
+            cd apps/bureau-console
+            pnpm install --frozen-lockfile=false
+            pnpm build || true
+          fi
+      - name: Capture logs/artifacts
+        if: always()
+        run: |
+          mkdir -p artifacts
+          (git status; git log -1) > artifacts/git.txt 2>&1 || true
+          pnpm -w run -r build --filter=!apps/bureau-console > artifacts/workspace-build.txt 2>&1 || true
+          [ -f apps/bureau-console/.next/build-manifest.json ] && cp -r apps/bureau-console/.next artifacts/next || true
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: diagnose-artifacts
+          path: artifacts
